@@ -1,12 +1,11 @@
 from scipy.stats import expon
 import csv
 
-queue_length_tracker = []
 arrival_times = []
 queuing_exit_times = []
 consult_exit_times = []
 change_points = []
-system_lengths = [] #indexed to change_points list
+queue_length_tracker = [] #indexed to change_points list
 max_time = 480
 arrival_time_mean = 12
 queuing_time_mean = 5
@@ -17,33 +16,37 @@ def crit_point_calc():
     start_time = 0
     while True:
         arrival_time = expon.rvs(loc = 0, scale = arrival_time_mean, size = 1) 
+        #print(arrival_time)
         start_time += arrival_time
+        #print(start_time)
 
         if start_time >= max_time:
             break
+        
+        if len(arrival_times) == 0:
+            arrival_times.append(arrival_time)
+        else:
+            arrival_times.append(arrival_times[-1] + arrival_time)
+        #print (arrival_times)
 
-        arrival_times.append(start_time)
+    #print(arrival_times)
 
-    for time in arrival_times:
-        i = 0
+    for id, time in enumerate(arrival_times):
         queuing_time = expon.rvs(loc = 0, scale = queuing_time_mean, size = 1) 
         consult_time = expon.rvs(loc = 0, scale = consult_time_mean, size = 1)
 
-        if time == 0:
-            continue
-        elif i == 0:
+        if id == 0 or time > consult_exit_times[id - 1] or time > queuing_exit_times[id - 1] and time + queuing_time > consult_exit_times[id - 1]:
             queuing_exit_times.append(time + queuing_time)
-            consult_exit_times.append(queuing_exit_times[arrival_times.index(time)] + consult_time)
-            i = 1
-        elif time > consult_exit_times[arrival_times.index(time) - 1]:
+            consult_exit_times.append(queuing_exit_times[id] + consult_time)
+        elif time > queuing_exit_times[id - 1]:
             queuing_exit_times.append(time + queuing_time)
-            consult_exit_times.append(queuing_exit_times[arrival_times.index(time)] + consult_time)
-        elif time > queuing_exit_times[time.index() - 1]:
-            queuing_exit_times.append(queuing_exit_times[arrival_times.index(time) - 1] + queuing_time)
-            consult_exit_times.append(consult_exit_times[arrival_times.index(time)] + consult_time)
+            consult_exit_times.append(consult_exit_times[id - 1] + consult_time)
         else:
-            queuing_exit_times.append(queuing_exit_times[arrival_times.index(time) - 1] + queuing_time)
-            consult_exit_times.append(consult_exit_times[arrival_times.index(time) - 1] + consult_time)
+            queuing_exit_times.append(queuing_exit_times[id - 1] + queuing_time)
+            consult_exit_times.append(consult_exit_times[id - 1] + consult_time)
+
+    #print(queuing_exit_times)
+    #print(consult_exit_times)
 
 def plot_system():
     i = 0
@@ -54,16 +57,22 @@ def plot_system():
         else:
             change_points.append(arrival_times[i])
             change_points.append(consult_exit_times[i])
+        
+        i += 1
+   
+    change_points.sort()
+    
+    #print(change_points)
 
-    for time in change_points:
-        if time.index() == 0:
-            system_lengths.append(1)
-        elif arrival_times.count(time) == consult_exit_times.count(time):
-            system_lengths.append(system_lengths[change_points.index(time) - 1])
-        elif arrival_times.count(time) == 1:
-            system_lengths.append(system_lengths[change_points.index(time) - 1] + 1)
+    for id, time in enumerate(change_points):
+        if id == 0:
+            queue_length_tracker.append(1)
+        elif arrival_times.count(time) > 0 and queuing_exit_times.count(time) > 0:
+            queue_length_tracker.append(queue_length_tracker[id - 1])
+        elif arrival_times.count(time) > 0:
+            queue_length_tracker.append(queue_length_tracker[id - 1] + 1)
         else:
-            system_lengths.append(system_lengths[change_points.index(time) - 1] - 1)
+            queue_length_tracker.append(queue_length_tracker[id - 1] - 1)
 
 def data_write():
     with open(sim_name + 'inflection_points.csv', 'w') as f:
@@ -84,6 +93,7 @@ def data_write():
         i = 0
         while i < len(change_points):
             datawriter.writerow([change_points [i], queue_length_tracker[i]])
+            i += 1
 
 def main():
     crit_point_calc()

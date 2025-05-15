@@ -1,5 +1,6 @@
 from scipy.stats import expon
 import csv
+import sys
 
 arrival_times = []
 queuing_exit_times = []
@@ -10,7 +11,7 @@ max_time = 480
 arrival_time_mean = 12
 queuing_time_mean = 5
 consult_time_mean = 20
-sim_name = ''
+sim_name = sys.argv[1]
 
 def crit_point_calc():
     start_time = 0
@@ -75,7 +76,7 @@ def plot_system():
             queue_length_tracker.append(queue_length_tracker[id - 1] - 1)
 
 def data_write():
-    with open(sim_name + 'inflection_points.csv', 'w') as f:
+    with open(sim_name + '_inflection_points.csv', 'w') as f:
         datawriter = csv.writer(f, delimiter = ',')
 
         datawriter.writerow(['arrival times', 'queuing exit times', 'consult exit times'])
@@ -85,7 +86,7 @@ def data_write():
             datawriter.writerow([arrival_times[i], queuing_exit_times[i], consult_exit_times[i]])
             i += 1
 
-    with open(sim_name + 'queue_length_OT.csv', 'w') as f:
+    with open(sim_name + '_queue_length_OT.csv', 'w') as f:
         datawriter = csv.writer(f, delimiter = ',')
 
         datawriter.writerow(['time', 'queue length'])

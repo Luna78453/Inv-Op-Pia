@@ -1,5 +1,6 @@
 from scipy.stats import expon
 import csv
+import sys
 
 arrival_times = []
 queuing_exit_times = []
@@ -11,7 +12,7 @@ arrival_time_mean = 12
 queuing_time_mean = 5
 consult_time_mean_1 = 20
 consukt_time_mean_2 = 25
-sim_name = ''
+sim_name = sys.argv[1]
 
 def crit_point_calc():
     start_time = 0
